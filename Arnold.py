@@ -1,4 +1,3 @@
-from pathlib import Path
 from PIL import Image
 import configparser
 import numpy as np
@@ -26,20 +25,22 @@ def toImage(Matrix, name):
     img.save(name)
 
 
-def arnoldEncode(Matrix, a, b):
+def arnoldEncode(Matrix, a, b, time):
     config.add_section('password')
     config.set('password', 'a', str(a))
     config.set('password', 'b', str(b))
+    config.set('password', 'time', str(time))
     config.write(open("key.ini", "w"))
     h, w = Matrix.shape[0], Matrix.shape[1]
     zeroMatrix = np.zeros(shape=Matrix.shape)
-    for x in range(h):
-        for y in range(w):
-            newX = (1 * x + b * y) % h
-            newY = (a * x + (a * b + 1) * y) % h
-            zeroMatrix[newX, newY, :] = Matrix[x, y, :]
-
-    return zeroMatrix
+    for i in range(time):
+        for x in range(h):
+            for y in range(w):
+                newX = (1 * x + b * y) % h
+                newY = (a * x + (a * b + 1) * y) % h
+                zeroMatrix[newX, newY, :] = Matrix[x, y, :]
+        Matrix = zeroMatrix.copy()
+    return Matrix
 
 
 def arnoldDecode(Matrix, a=None, b=None):
@@ -48,13 +49,15 @@ def arnoldDecode(Matrix, a=None, b=None):
     config.read('key.ini')
     a = int(config.get('password', 'a'))
     b = int(config.get('password', 'b'))
-    for x in range(h):
-        for y in range(w):
-            newX = ((a * b + 1) * x + (-b) * y) % h
-            newY = ((-a) * x + y) % h
-            zeroMatrix[newX, newY, :] = Matrix[x, y, :]
-
-    return zeroMatrix
+    time = int(config.get('password', 'time'))
+    for i in range(time):
+        for x in range(h):
+            for y in range(w):
+                newX = ((a * b + 1) * x + (-b) * y) % h
+                newY = ((-a) * x + y) % h
+                zeroMatrix[newX, newY, :] = Matrix[x, y, :]
+        Matrix = zeroMatrix.copy()
+    return Matrix
 
 
 def fillBlack(path):
@@ -62,7 +65,6 @@ def fillBlack(path):
     image = image.convert('RGB')
     w, h = image.size
     background = Image.new('RGB', size=(max(w, h), max(w, h)), color=(0, 0, 0))
-    length = int(abs(w - h))
     box = (0, 0)  # 粘贴的位置
     background.paste(image, box)
     config.add_section('image')
@@ -85,9 +87,9 @@ if __name__ == '__main__':
     useMethod = int(input('加密（1）/解密（2）：'))
     if useMethod == 1:
         path = input('请输入文件路径：')
-        a, b = map(int, input('输入加密key：a,b（空格隔开）:').split())
+        a, b, time = map(int, input('输入加密key：a,b,time（空格隔开）:').split())
         fillBlack(path)
-        toImage(arnoldEncode(loadImage('img/background.png'), a, b).astype('uint8'), 'img/encode.png')
+        toImage(arnoldEncode(loadImage('img/background.png'), a, b, time).astype('uint8'), 'img/encode.png')
     elif useMethod == 2:
         path = input('请输入文件路径：')
         toImage(arnoldDecode(loadImage(path)).astype('uint8'), 'img/originalBlack.png')
