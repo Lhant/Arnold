@@ -3,7 +3,7 @@
 
 运行方法：
 
-　　　プログラム名　オリジナル画像  logistics映射のパラメタ　暗号化された画像の名前と　アーノルド変換のパラメタ
+プログラム名　オリジナル画像  logistics映射のパラメタ　暗号化された画像の名前　アーノルド変換のパラメタ
    
 python chaosEncode.py originalImg.png 0.51 3.7 decoding.png 2 3 3
 
